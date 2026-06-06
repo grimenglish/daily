@@ -4,7 +4,6 @@ from pathlib import Path
 from datetime import datetime, date, time, timedelta
 from io import BytesIO
 import calendar
-import html
 
 import pandas as pd
 import streamlit as st
@@ -16,7 +15,7 @@ DB_PATH = Path("daily_manager.db")
 
 
 # =========================
-# 페이지 설정 / 디자인
+# 기본 설정
 # =========================
 st.set_page_config(
     page_title=APP_TITLE,
@@ -31,63 +30,48 @@ st.markdown(
     .block-container {
         padding-top: 1.2rem;
         padding-bottom: 2rem;
-        max-width: 1500px;
+        max-width: 1520px;
     }
 
-    .app-title {
-        font-size: 2.1rem;
+    .main-title {
+        font-size: 2.05rem;
         font-weight: 950;
         letter-spacing: -0.05em;
-        margin-bottom: 0.2rem;
+        margin-bottom: 0.15rem;
     }
 
-    .app-subtitle {
+    .sub-title {
         color: #6b7280;
-        font-size: 0.95rem;
         margin-bottom: 1rem;
     }
 
     .section-title {
-        font-size: 1.25rem;
+        font-size: 1.2rem;
         font-weight: 900;
-        margin: 0.4rem 0 0.8rem 0;
         letter-spacing: -0.04em;
-    }
-
-    .mini-muted {
-        color: #6b7280;
-        font-size: 0.85rem;
-    }
-
-    .dashboard-box {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 20px;
-        padding: 1rem;
-        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
-        margin-bottom: 1rem;
+        margin: 0.3rem 0 0.7rem 0;
     }
 
     .task-card {
         border: 1px solid #e5e7eb;
-        background: #ffffff;
         border-radius: 16px;
         padding: 0.8rem 0.9rem;
         margin-bottom: 0.65rem;
+        background: #ffffff;
         box-shadow: 0 2px 10px rgba(15, 23, 42, 0.035);
     }
 
-    .task-card-overdue {
-        border-left: 7px solid #ef4444;
-        background: #fff7f7;
-    }
-
-    .task-card-today {
+    .task-today {
         border-left: 7px solid #2563eb;
         background: #f8fbff;
     }
 
-    .task-card-upcoming {
+    .task-overdue {
+        border-left: 7px solid #ef4444;
+        background: #fff7f7;
+    }
+
+    .task-upcoming {
         border-left: 7px solid #10b981;
         background: #f8fffb;
     }
@@ -100,112 +84,61 @@ st.markdown(
 
     .pill {
         display: inline-block;
-        padding: 0.16rem 0.5rem;
+        padding: 0.16rem 0.48rem;
         border-radius: 999px;
         background: #f3f4f6;
         border: 1px solid #e5e7eb;
         color: #374151;
         font-size: 0.78rem;
-        margin-right: 0.2rem;
-        margin-top: 0.25rem;
+        margin-right: 0.18rem;
+        margin-top: 0.24rem;
     }
 
-    .pill-red {background:#fee2e2; color:#991b1b; border-color:#fecaca;}
-    .pill-blue {background:#dbeafe; color:#1e40af; border-color:#bfdbfe;}
-    .pill-green {background:#d1fae5; color:#065f46; border-color:#a7f3d0;}
-    .pill-yellow {background:#fef3c7; color:#92400e; border-color:#fde68a;}
+    .red {background:#fee2e2; color:#991b1b; border-color:#fecaca;}
+    .blue {background:#dbeafe; color:#1e40af; border-color:#bfdbfe;}
+    .green {background:#d1fae5; color:#065f46; border-color:#a7f3d0;}
+    .yellow {background:#fef3c7; color:#92400e; border-color:#fde68a;}
 
-    .quick-panel {
-        background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+    .calendar-box {
         border: 1px solid #e5e7eb;
         border-radius: 20px;
         padding: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .calendar-wrap {
         background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 22px;
-        padding: 1rem;
         box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
     }
 
-    .calendar-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        margin-bottom: 0.75rem;
-    }
-
-    .calendar-month {
-        font-size: 1.35rem;
-        font-weight: 950;
-        letter-spacing: -0.04em;
-    }
-
-    .calendar-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 6px;
-        table-layout: fixed;
-    }
-
-    .calendar-table th {
+    .weekday {
         text-align: center;
-        color: #6b7280;
-        font-size: 0.82rem;
-        padding-bottom: 0.25rem;
-    }
-
-    .calendar-cell {
-        height: 86px;
-        vertical-align: top;
-        border: 1px solid #e5e7eb;
-        border-radius: 15px;
-        background: #fafafa;
-        padding: 0.45rem;
-        overflow: hidden;
-    }
-
-    .calendar-cell.empty {
-        background: #ffffff;
-        border-color: transparent;
-    }
-
-    .calendar-cell.today {
-        border: 2px solid #2563eb;
-        background: #eff6ff;
-    }
-
-    .calendar-day {
         font-weight: 900;
-        font-size: 0.92rem;
-        margin-bottom: 0.25rem;
+        color: #4b5563;
+        padding: 0.45rem 0;
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 0.35rem;
     }
 
-    .calendar-count {
-        display: inline-block;
-        font-size: 0.72rem;
-        padding: 0.11rem 0.36rem;
-        border-radius: 999px;
-        margin-right: 0.12rem;
-        margin-bottom: 0.12rem;
+    .day-info {
+        min-height: 54px;
+        padding: 0.2rem 0.1rem 0.45rem 0.1rem;
+        text-align: center;
+        font-size: 0.78rem;
     }
 
-    .count-task {
-        background: #fee2e2;
-        color: #991b1b;
+    .today-mark {
+        color: #2563eb;
+        font-weight: 900;
     }
 
-    .count-schedule {
-        background: #dbeafe;
-        color: #1e40af;
+    .selected-day {
+        color: #111827;
+        font-weight: 900;
+        background: #eef2ff;
+        border-radius: 10px;
+        padding: 0.3rem;
+        margin-bottom: 0.5rem;
     }
 
-    .count-done {
-        background: #d1fae5;
-        color: #065f46;
+    .muted {
+        color: #9ca3af;
     }
 
     .alarm-box {
@@ -221,6 +154,12 @@ st.markdown(
         font-weight: 900;
         color: #c62828;
         margin-bottom: 0.5rem;
+    }
+
+    div.stButton > button {
+        min-height: 38px;
+        font-weight: 800;
+        border-radius: 12px;
     }
 
     div[data-testid="stMetricValue"] {
@@ -325,7 +264,7 @@ init_db()
 
 
 # =========================
-# 공통 유틸
+# 유틸
 # =========================
 def now_str():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -333,13 +272,6 @@ def now_str():
 
 def today_str():
     return date.today().isoformat()
-
-
-def parse_date(s):
-    try:
-        return date.fromisoformat(str(s))
-    except Exception:
-        return None
 
 
 def combine_datetime(d, t):
@@ -353,15 +285,53 @@ def combine_datetime(d, t):
         return None
 
 
-def priority_badge(priority):
-    if priority == "높음":
-        return "🔥 높음"
-    if priority == "낮음":
-        return "낮음"
-    return "보통"
+def next_repeat_date(due_date, repeat_type):
+    if not due_date or repeat_type == "없음":
+        return None
+
+    d = date.fromisoformat(due_date)
+
+    if repeat_type == "매일":
+        return d + timedelta(days=1)
+
+    if repeat_type == "매주":
+        return d + timedelta(weeks=1)
+
+    if repeat_type == "매월":
+        month = d.month + 1
+        year = d.year
+        if month == 13:
+            month = 1
+            year += 1
+
+        last_day = calendar.monthrange(year, month)[1]
+        return date(year, month, min(d.day, last_day))
+
+    if repeat_type == "매년":
+        try:
+            return date(d.year + 1, d.month, d.day)
+        except ValueError:
+            return date(d.year + 1, 2, 28)
+
+    return None
 
 
-def status_badge(status):
+def task_group(row):
+    if row["status"] == "완료":
+        return "done"
+
+    dt = combine_datetime(row["due_date"], row["due_time"])
+
+    if dt and dt < datetime.now():
+        return "overdue"
+
+    if row["due_date"] == today_str():
+        return "today"
+
+    return "upcoming"
+
+
+def status_label(status):
     if status == "완료":
         return "✅ 완료"
     if status == "진행":
@@ -371,64 +341,55 @@ def status_badge(status):
     return "대기"
 
 
-def task_group(row):
-    if row["status"] == "완료":
-        return "done"
-    dt = combine_datetime(row["due_date"], row["due_time"])
-    if dt and dt < datetime.now():
-        return "overdue"
-    if row["due_date"] == today_str():
-        return "today"
-    return "upcoming"
+def priority_label(priority):
+    if priority == "높음":
+        return "🔥 높음"
+    if priority == "낮음":
+        return "낮음"
+    return "보통"
 
 
-def next_repeat_date(due_date, repeat_type):
-    if not due_date or repeat_type == "없음":
-        return None
-    d = date.fromisoformat(due_date)
-    if repeat_type == "매일":
-        return d + timedelta(days=1)
-    if repeat_type == "매주":
-        return d + timedelta(weeks=1)
-    if repeat_type == "매월":
-        month = d.month + 1
-        year = d.year
-        if month == 13:
-            month = 1
-            year += 1
-        last_days = [31, 29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-        return date(year, month, min(d.day, last_days[month - 1]))
-    if repeat_type == "매년":
-        try:
-            return date(d.year + 1, d.month, d.day)
-        except ValueError:
-            return date(d.year + 1, 2, 28)
-    return None
-
-
-def render_tags(tags):
-    if not tags:
-        return ""
-    parts = [x.strip() for x in tags.replace("#", "").split(",") if x.strip()]
-    return " ".join([f'<span class="pill">#{html.escape(p)}</span>' for p in parts])
-
-
-def section_title(title, desc=""):
-    st.markdown(f'<div class="app-title">{title}</div>', unsafe_allow_html=True)
+def page_title(title, desc=""):
+    st.markdown(f'<div class="main-title">{title}</div>', unsafe_allow_html=True)
     if desc:
-        st.markdown(f'<div class="app-subtitle">{desc}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="sub-title">{desc}</div>', unsafe_allow_html=True)
+
+
+def safe_tasks_df():
+    data = df("SELECT * FROM tasks ORDER BY due_date ASC, due_time ASC, created_at DESC")
+    if data.empty:
+        return pd.DataFrame(columns=[
+            "id", "title", "detail", "category", "priority", "due_date", "due_time",
+            "status", "repeat_type", "tags", "created_at", "completed_at", "notified_at"
+        ])
+    return data
+
+
+def safe_schedules_df():
+    data = df("SELECT * FROM schedules ORDER BY schedule_date ASC, start_time ASC")
+    if data.empty:
+        return pd.DataFrame(columns=[
+            "id", "title", "detail", "category", "schedule_date", "start_time",
+            "end_time", "location", "alarm_minutes", "created_at", "notified_at"
+        ])
+    return data
+
+
+def safe_memos_df():
+    data = df("SELECT * FROM memos ORDER BY pinned DESC, updated_at DESC")
+    if data.empty:
+        return pd.DataFrame(columns=[
+            "id", "title", "content", "tags", "pinned", "created_at", "updated_at"
+        ])
+    return data
 
 
 def download_excel():
-    tasks = df("SELECT * FROM tasks ORDER BY created_at DESC")
-    schedules = df("SELECT * FROM schedules ORDER BY schedule_date DESC, start_time DESC")
-    memos = df("SELECT * FROM memos ORDER BY pinned DESC, updated_at DESC")
-
     output = BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        tasks.to_excel(writer, index=False, sheet_name="할일")
-        schedules.to_excel(writer, index=False, sheet_name="일정")
-        memos.to_excel(writer, index=False, sheet_name="메모")
+        safe_tasks_df().to_excel(writer, index=False, sheet_name="할일")
+        safe_schedules_df().to_excel(writer, index=False, sheet_name="일정")
+        safe_memos_df().to_excel(writer, index=False, sheet_name="메모")
     return output.getvalue()
 
 
@@ -452,6 +413,7 @@ def get_due_alerts():
           AND notified_at IS NULL
         """
     )
+
     if not tasks.empty:
         for _, row in tasks.iterrows():
             due_dt = combine_datetime(row["due_date"], row["due_time"])
@@ -461,7 +423,7 @@ def get_due_alerts():
                     "id": int(row["id"]),
                     "title": row["title"],
                     "time": due_dt.strftime("%Y-%m-%d %H:%M"),
-                    "message": f"할 일 시간입니다: {row['title']}"
+                    "message": f"할 일 시간입니다: {row['title']}",
                 })
 
     schedules = df(
@@ -474,23 +436,26 @@ def get_due_alerts():
           AND notified_at IS NULL
         """
     )
+
     if not schedules.empty:
         for _, row in schedules.iterrows():
             start_dt = combine_datetime(row["schedule_date"], row["start_time"])
             if not start_dt:
                 continue
+
             alarm_minutes = int(row["alarm_minutes"] or 0)
             alarm_dt = start_dt - timedelta(minutes=alarm_minutes)
 
             if alarm_dt <= now <= start_dt + timedelta(hours=24):
-                msg = f"{alarm_minutes}분 후 일정입니다: {row['title']}" if alarm_minutes > 0 else f"일정 시작입니다: {row['title']}"
+                msg = f"{alarm_minutes}분 후 일정입니다: {row['title']}" if alarm_minutes else f"일정 시작입니다: {row['title']}"
                 alerts.append({
                     "type": "일정",
                     "id": int(row["id"]),
                     "title": row["title"],
                     "time": start_dt.strftime("%Y-%m-%d %H:%M"),
-                    "message": msg
+                    "message": msg,
                 })
+
     return alerts
 
 
@@ -507,8 +472,8 @@ def render_alarm(alerts):
     if not alerts:
         return
 
-    lines = "".join(
-        f"<li><b>{html.escape(a['type'])}</b> · {html.escape(a['time'])} · {html.escape(a['title'])}</li>"
+    html_lines = "".join(
+        f"<li><b>{a['type']}</b> · {a['time']} · {a['title']}</li>"
         for a in alerts
     )
 
@@ -516,19 +481,20 @@ def render_alarm(alerts):
         f"""
         <div class="alarm-box">
             <div class="alarm-title">🔔 알림</div>
-            <ul>{lines}</ul>
+            <ul>{html_lines}</ul>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    joined = "\\n".join([a["message"] for a in alerts])
-    safe_msg = joined.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
+    msg = "\\n".join([a["message"] for a in alerts])
+    msg = msg.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
 
     components.html(
         f"""
         <script>
-        const msg = `{safe_msg}`;
+        const msg = `{msg}`;
+
         async function ringAlarm() {{
             try {{
                 if ("Notification" in window) {{
@@ -557,17 +523,18 @@ def render_alarm(alerts):
                     osc.connect(gain);
                     gain.connect(ctx.destination);
                     gain.gain.setValueAtTime(0.0001, ctx.currentTime + start);
-                    gain.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + start + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.32, ctx.currentTime + start + 0.02);
                     gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + duration);
                     osc.start(ctx.currentTime + start);
-                    osc.stop(ctx.currentTime + start + duration + 0.03);
+                    osc.stop(ctx.currentTime + start + duration + 0.04);
                 }}
 
-                beep(880, 0.00, 0.25);
-                beep(1046, 0.32, 0.25);
-                beep(880, 0.64, 0.25);
+                beep(880, 0.00, 0.24);
+                beep(1046, 0.32, 0.24);
+                beep(880, 0.64, 0.24);
             }} catch(e) {{}}
         }}
+
         ringAlarm();
         </script>
         """,
@@ -589,154 +556,203 @@ def auto_refresh(seconds):
 
 
 # =========================
-# 대시보드용 컴포넌트
+# 액션
 # =========================
-def render_task_card(row, key_prefix, compact=False):
-    group = task_group(row)
-    css = {
-        "overdue": "task-card task-card-overdue",
-        "today": "task-card task-card-today",
-        "upcoming": "task-card task-card-upcoming",
-        "done": "task-card",
-    }[group]
+def complete_task(row_id):
+    row = conn.execute("SELECT * FROM tasks WHERE id=?", (row_id,)).fetchone()
+    if not row:
+        return
 
-    time_label = row["due_time"] or "--:--"
-    date_label = row["due_date"] or "날짜없음"
-    priority_class = "pill-red" if row["priority"] == "높음" else "pill-yellow" if row["priority"] == "보통" else ""
-    group_label = "기한지남" if group == "overdue" else "오늘" if group == "today" else "완료" if group == "done" else "예정"
-    group_class = "pill-red" if group == "overdue" else "pill-blue" if group == "today" else "pill-green" if group == "upcoming" else ""
+    q("UPDATE tasks SET status='완료', completed_at=? WHERE id=?", (now_str(), row_id))
+
+    next_d = next_repeat_date(row["due_date"], row["repeat_type"])
+    if next_d:
+        q(
+            """
+            INSERT INTO tasks
+            (title, detail, category, priority, due_date, due_time, status, repeat_type, tags, created_at, notified_at)
+            VALUES (?, ?, ?, ?, ?, ?, '대기', ?, ?, ?, NULL)
+            """,
+            (
+                row["title"], row["detail"], row["category"], row["priority"],
+                next_d.isoformat(), row["due_time"], row["repeat_type"], row["tags"], now_str()
+            ),
+        )
+
+
+def render_task_card(row, key_prefix):
+    group = task_group(row)
+
+    css = "task-card"
+    group_badge = "예정"
+    group_cls = "green"
+
+    if group == "today":
+        css += " task-today"
+        group_badge = "오늘"
+        group_cls = "blue"
+    elif group == "overdue":
+        css += " task-overdue"
+        group_badge = "기한지남"
+        group_cls = "red"
+    elif group == "done":
+        group_badge = "완료"
+        group_cls = "green"
+    else:
+        css += " task-upcoming"
+
+    priority_cls = "red" if row["priority"] == "높음" else "yellow" if row["priority"] == "보통" else ""
 
     st.markdown(
         f"""
         <div class="{css}">
-            <div class="task-title">{html.escape(row['title'])}</div>
-            <div style="margin-top:0.35rem;">
-                <span class="pill {group_class}">{group_label}</span>
-                <span class="pill">{html.escape(row['category'])}</span>
-                <span class="pill {priority_class}">{priority_badge(row['priority'])}</span>
-                <span class="pill">⏰ {html.escape(date_label)} {html.escape(time_label)}</span>
-            </div>
-            {f'<div class="mini-muted" style="margin-top:0.4rem;">{html.escape(row["detail"][:80])}</div>' if row["detail"] else ''}
-            {render_tags(row["tags"]) if row["tags"] else ''}
+            <div class="task-title">{row['title']}</div>
+            <span class="pill {group_cls}">{group_badge}</span>
+            <span class="pill">{row['category']}</span>
+            <span class="pill {priority_cls}">{priority_label(row['priority'])}</span>
+            <span class="pill">⏰ {row['due_date'] or '-'} {row['due_time'] or ''}</span>
+            {f"<div class='muted' style='margin-top:0.35rem;'>{row['detail'][:70]}</div>" if row['detail'] else ""}
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    c1, c2, c3 = st.columns([1, 1, 1])
+    c1, c2, c3 = st.columns(3)
+
     if row["status"] != "완료":
         if c1.button("완료", key=f"{key_prefix}_done_{row['id']}", use_container_width=True):
-            q("UPDATE tasks SET status='완료', completed_at=? WHERE id=?", (now_str(), row["id"]))
-
-            next_d = next_repeat_date(row["due_date"], row["repeat_type"])
-            if next_d:
-                q(
-                    """
-                    INSERT INTO tasks
-                    (title, detail, category, priority, due_date, due_time, status, repeat_type, tags, created_at, notified_at)
-                    VALUES (?, ?, ?, ?, ?, ?, '대기', ?, ?, ?, NULL)
-                    """,
-                    (
-                        row["title"], row["detail"], row["category"], row["priority"],
-                        next_d.isoformat(), row["due_time"], row["repeat_type"], row["tags"], now_str()
-                    ),
-                )
+            complete_task(int(row["id"]))
             st.rerun()
     else:
         if c1.button("미완료", key=f"{key_prefix}_undo_{row['id']}", use_container_width=True):
-            q("UPDATE tasks SET status='대기', completed_at=NULL WHERE id=?", (row["id"],))
+            q("UPDATE tasks SET status='대기', completed_at=NULL WHERE id=?", (int(row["id"]),))
             st.rerun()
 
     if c2.button("진행", key=f"{key_prefix}_progress_{row['id']}", use_container_width=True):
-        q("UPDATE tasks SET status='진행' WHERE id=?", (row["id"],))
+        q("UPDATE tasks SET status='진행' WHERE id=?", (int(row["id"]),))
         st.rerun()
 
-    if c3.button("삭제", key=f"{key_prefix}_del_{row['id']}", use_container_width=True):
-        q("DELETE FROM tasks WHERE id=?", (row["id"],))
+    if c3.button("삭제", key=f"{key_prefix}_delete_{row['id']}", use_container_width=True):
+        q("DELETE FROM tasks WHERE id=?", (int(row["id"]),))
         st.rerun()
 
 
-def month_calendar_html(year, month, tasks, schedules):
-    cal = calendar.Calendar(firstweekday=6)  # 일요일 시작
-    weeks = cal.monthdayscalendar(year, month)
+# =========================
+# 진짜 달력
+# =========================
+def init_calendar_state():
+    if "calendar_year" not in st.session_state:
+        st.session_state.calendar_year = date.today().year
+    if "calendar_month" not in st.session_state:
+        st.session_state.calendar_month = date.today().month
+    if "selected_date" not in st.session_state:
+        st.session_state.selected_date = today_str()
 
-    month_start = date(year, month, 1)
-    if month == 12:
-        month_end = date(year + 1, 1, 1) - timedelta(days=1)
-    else:
-        month_end = date(year, month + 1, 1) - timedelta(days=1)
 
-    tasks_in_month = tasks.copy()
-    schedules_in_month = schedules.copy()
+def move_month(delta):
+    y = int(st.session_state.calendar_year)
+    m = int(st.session_state.calendar_month) + delta
 
-    if not tasks_in_month.empty:
-        tasks_in_month = tasks_in_month[
-            (tasks_in_month["due_date"] >= month_start.isoformat()) &
-            (tasks_in_month["due_date"] <= month_end.isoformat())
-        ]
-    if not schedules_in_month.empty:
-        schedules_in_month = schedules_in_month[
-            (schedules_in_month["schedule_date"] >= month_start.isoformat()) &
-            (schedules_in_month["schedule_date"] <= month_end.isoformat())
-        ]
+    if m < 1:
+        y -= 1
+        m = 12
+    elif m > 12:
+        y += 1
+        m = 1
 
-    task_counts = tasks_in_month.groupby("due_date").size().to_dict() if not tasks_in_month.empty else {}
-    schedule_counts = schedules_in_month.groupby("schedule_date").size().to_dict() if not schedules_in_month.empty else {}
-    done_counts = tasks_in_month[tasks_in_month["status"] == "완료"].groupby("due_date").size().to_dict() if not tasks_in_month.empty else {}
+    st.session_state.calendar_year = y
+    st.session_state.calendar_month = m
 
-    html_rows = []
+
+def set_today_calendar():
+    today = date.today()
+    st.session_state.calendar_year = today.year
+    st.session_state.calendar_month = today.month
+    st.session_state.selected_date = today.isoformat()
+
+
+def render_real_calendar(tasks, schedules):
+    init_calendar_state()
+
+    year = int(st.session_state.calendar_year)
+    month = int(st.session_state.calendar_month)
+
+    st.markdown('<div class="calendar-box">', unsafe_allow_html=True)
+
+    c1, c2, c3, c4 = st.columns([1, 3, 1, 1])
+    if c1.button("◀ 이전", use_container_width=True):
+        move_month(-1)
+        st.rerun()
+
+    c2.markdown(
+        f"<div style='font-size:1.45rem;font-weight:950;text-align:center;letter-spacing:-0.04em;'>{year}년 {month}월</div>",
+        unsafe_allow_html=True,
+    )
+
+    if c3.button("오늘", use_container_width=True):
+        set_today_calendar()
+        st.rerun()
+
+    if c4.button("다음 ▶", use_container_width=True):
+        move_month(1)
+        st.rerun()
+
+    st.markdown("")
+
+    weekdays = ["일", "월", "화", "수", "목", "금", "토"]
+    header_cols = st.columns(7)
+    for i, day_name in enumerate(weekdays):
+        header_cols[i].markdown(f"<div class='weekday'>{day_name}</div>", unsafe_allow_html=True)
+
+    cal = calendar.Calendar(firstweekday=6)
+    weeks = cal.monthdatescalendar(year, month)
+
+    selected = st.session_state.selected_date
+
     for week in weeks:
-        tds = []
-        for day in week:
-            if day == 0:
-                tds.append('<td class="calendar-cell empty"></td>')
-                continue
-
-            d = date(year, month, day)
+        cols = st.columns(7)
+        for idx, d in enumerate(week):
             d_str = d.isoformat()
+            is_current_month = d.month == month
             is_today = d == date.today()
-            cls = "calendar-cell today" if is_today else "calendar-cell"
+            is_selected = selected == d_str
 
-            task_count = int(task_counts.get(d_str, 0))
-            schedule_count = int(schedule_counts.get(d_str, 0))
-            done_count = int(done_counts.get(d_str, 0))
+            day_tasks = tasks[tasks["due_date"] == d_str] if not tasks.empty else pd.DataFrame()
+            day_schedules = schedules[schedules["schedule_date"] == d_str] if not schedules.empty else pd.DataFrame()
 
-            badges = ""
-            if task_count:
-                badges += f'<span class="calendar-count count-task">할일 {task_count}</span>'
-            if schedule_count:
-                badges += f'<span class="calendar-count count-schedule">일정 {schedule_count}</span>'
-            if done_count:
-                badges += f'<span class="calendar-count count-done">완료 {done_count}</span>'
+            task_count = len(day_tasks)
+            schedule_count = len(day_schedules)
+            done_count = len(day_tasks[day_tasks["status"] == "완료"]) if not day_tasks.empty else 0
 
-            tds.append(
-                f"""
-                <td class="{cls}">
-                    <div class="calendar-day">{day}</div>
-                    {badges}
-                </td>
-                """
-            )
-        html_rows.append("<tr>" + "".join(tds) + "</tr>")
+            with cols[idx]:
+                label = f"{d.day}"
+                if is_today:
+                    label = f"📍 {d.day}"
 
-    return f"""
-    <div class="calendar-wrap">
-        <div class="calendar-header">
-            <div class="calendar-month">{year}년 {month}월</div>
-            <div class="mini-muted">빨강=할 일 · 파랑=일정</div>
-        </div>
-        <table class="calendar-table">
-            <thead>
-                <tr>
-                    <th>일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th>
-                </tr>
-            </thead>
-            <tbody>
-                {''.join(html_rows)}
-            </tbody>
-        </table>
-    </div>
-    """
+                disabled = not is_current_month
+                button_type = "primary" if is_selected else "secondary"
+
+                if st.button(label, key=f"cal_day_{d_str}", use_container_width=True, disabled=disabled, type=button_type):
+                    st.session_state.selected_date = d_str
+                    st.rerun()
+
+                if not is_current_month:
+                    st.markdown("<div class='day-info muted'>다른 달</div>", unsafe_allow_html=True)
+                else:
+                    info = []
+                    if task_count:
+                        info.append(f"<span class='pill red'>할 일 {task_count}</span>")
+                    if schedule_count:
+                        info.append(f"<span class='pill blue'>일정 {schedule_count}</span>")
+                    if done_count:
+                        info.append(f"<span class='pill green'>완료 {done_count}</span>")
+
+                    if info:
+                        st.markdown("<div class='day-info'>" + "<br>".join(info) + "</div>", unsafe_allow_html=True)
+                    else:
+                        st.markdown("<div class='day-info muted'>-</div>", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 # =========================
@@ -744,6 +760,7 @@ def month_calendar_html(year, month, tasks, schedules):
 # =========================
 with st.sidebar:
     st.title("🗓️ 일상 관리")
+
     menu = st.radio(
         "메뉴",
         ["대시보드", "할 일", "일정", "메모장", "백업/설정"],
@@ -751,8 +768,14 @@ with st.sidebar:
     )
 
     st.divider()
+
     alarm_enabled = st.toggle("🔔 알림 자동 확인", value=True)
-    refresh_seconds = st.selectbox("확인 주기", [15, 30, 60, 120, 300], index=2, format_func=lambda x: f"{x}초마다")
+    refresh_seconds = st.selectbox(
+        "확인 주기",
+        [15, 30, 60, 120, 300],
+        index=2,
+        format_func=lambda x: f"{x}초마다",
+    )
     st.caption("앱 화면이 열려 있어야 알림이 울립니다.")
 
     if st.button("🔊 알림 테스트", use_container_width=True):
@@ -761,10 +784,11 @@ with st.sidebar:
             "id": 0,
             "title": "알림 테스트",
             "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "message": "알림 테스트입니다."
+            "message": "알림 테스트입니다.",
         }])
 
     st.divider()
+
     st.caption(f"오늘: {date.today().strftime('%Y-%m-%d')}")
     st.download_button(
         "📦 엑셀 백업",
@@ -787,22 +811,16 @@ if alarm_enabled:
 # 대시보드
 # =========================
 if menu == "대시보드":
-    section_title("대시보드", "왼쪽은 할 일, 오른쪽은 달력. 오늘 할 일을 바로 보고 바로 처리합니다.")
+    page_title("대시보드", "왼쪽은 할 일, 오른쪽은 실제 달력. 날짜를 누르면 그날 상세가 바로 보입니다.")
 
-    tasks_all = df("SELECT * FROM tasks ORDER BY due_date ASC, due_time ASC, priority DESC")
-    schedules_all = df("SELECT * FROM schedules ORDER BY schedule_date ASC, start_time ASC")
-    memos_all = df("SELECT * FROM memos ORDER BY pinned DESC, updated_at DESC")
+    tasks = safe_tasks_df()
+    schedules = safe_schedules_df()
+    memos = safe_memos_df()
 
-    if tasks_all.empty:
-        tasks_all = pd.DataFrame(columns=["id","title","detail","category","priority","due_date","due_time","status","repeat_type","tags","created_at","completed_at","notified_at"])
-    if schedules_all.empty:
-        schedules_all = pd.DataFrame(columns=["id","title","detail","category","schedule_date","start_time","end_time","location","alarm_minutes","created_at","notified_at"])
-
-    incomplete = tasks_all[tasks_all["status"] != "완료"]
+    incomplete = tasks[tasks["status"] != "완료"] if not tasks.empty else pd.DataFrame()
     overdue = incomplete[incomplete.apply(lambda r: task_group(r) == "overdue", axis=1)] if not incomplete.empty else pd.DataFrame()
     today_tasks = incomplete[incomplete["due_date"] == today_str()] if not incomplete.empty else pd.DataFrame()
-    upcoming = incomplete[incomplete["due_date"] > today_str()].head(8) if not incomplete.empty else pd.DataFrame()
-    today_schedules = schedules_all[schedules_all["schedule_date"] == today_str()] if not schedules_all.empty else pd.DataFrame()
+    today_schedules = schedules[schedules["schedule_date"] == today_str()] if not schedules.empty else pd.DataFrame()
 
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("오늘 할 일", len(today_tasks))
@@ -810,21 +828,20 @@ if menu == "대시보드":
     m3.metric("미완료 전체", len(incomplete))
     m4.metric("오늘 일정", len(today_schedules))
 
-    st.markdown("")
-
-    # 빠른 등록
     with st.expander("➕ 빠른 등록", expanded=False):
-        tab_task, tab_schedule, tab_memo = st.tabs(["할 일", "일정", "메모"])
-        with tab_task:
-            with st.form("dash_quick_task", clear_on_submit=True):
-                c1, c2, c3, c4, c5 = st.columns([2.2, 1, 1, 1, 1])
-                title = c1.text_input("할 일", placeholder="예: 거래처 연락 / 택배 확인")
+        tab1, tab2, tab3 = st.tabs(["할 일", "일정", "메모"])
+
+        with tab1:
+            with st.form("quick_task", clear_on_submit=True):
+                c1, c2, c3, c4, c5 = st.columns([2.4, 1, 1, 1, 1])
+                title = c1.text_input("할 일", placeholder="예: 택배 확인 / 거래처 연락")
                 category = c2.selectbox("분류", ["개인", "업무", "식혜명가", "결혼준비", "기타"])
                 priority = c3.selectbox("중요도", ["보통", "높음", "낮음"])
                 due_date = c4.date_input("날짜", value=date.today())
                 due_time = c5.time_input("시간", value=time(18, 0))
-                detail = st.text_area("상세 내용", height=70)
-                submitted = st.form_submit_button("할 일 등록", use_container_width=True)
+                detail = st.text_area("상세", height=70)
+                submitted = st.form_submit_button("등록", use_container_width=True)
+
                 if submitted and title.strip():
                     q(
                         """
@@ -837,15 +854,16 @@ if menu == "대시보드":
                     st.success("등록했습니다.")
                     st.rerun()
 
-        with tab_schedule:
-            with st.form("dash_quick_schedule", clear_on_submit=True):
-                c1, c2, c3, c4 = st.columns([2.2, 1, 1, 1])
+        with tab2:
+            with st.form("quick_schedule", clear_on_submit=True):
+                c1, c2, c3, c4 = st.columns([2.4, 1, 1, 1])
                 title = c1.text_input("일정", placeholder="예: 미팅 / 납품 / 병원")
-                schedule_date = c2.date_input("날짜", value=date.today(), key="dash_sch_date")
-                start_time = c3.time_input("시작", value=time(9, 0), key="dash_sch_start")
+                schedule_date = c2.date_input("날짜", value=date.today(), key="q_sch_date")
+                start_time = c3.time_input("시작", value=time(9, 0), key="q_sch_start")
                 alarm_minutes = c4.selectbox("알림", [0, 5, 10, 30, 60, 120, 1440], format_func=lambda x: "시작시간" if x == 0 else f"{x}분 전")
                 location = st.text_input("장소")
-                submitted = st.form_submit_button("일정 등록", use_container_width=True)
+                submitted = st.form_submit_button("등록", use_container_width=True)
+
                 if submitted and title.strip():
                     q(
                         """
@@ -858,11 +876,12 @@ if menu == "대시보드":
                     st.success("등록했습니다.")
                     st.rerun()
 
-        with tab_memo:
-            with st.form("dash_quick_memo", clear_on_submit=True):
+        with tab3:
+            with st.form("quick_memo", clear_on_submit=True):
                 title = st.text_input("메모 제목")
                 content = st.text_area("내용", height=100)
-                submitted = st.form_submit_button("메모 등록", use_container_width=True)
+                submitted = st.form_submit_button("저장", use_container_width=True)
+
                 if submitted and title.strip():
                     q(
                         """
@@ -872,72 +891,71 @@ if menu == "대시보드":
                         """,
                         (title.strip(), content.strip(), now_str(), now_str()),
                     )
-                    st.success("등록했습니다.")
+                    st.success("저장했습니다.")
                     st.rerun()
 
-    left, right = st.columns([1.03, 1.17], gap="large")
+    st.divider()
+
+    left, right = st.columns([1.0, 1.25], gap="large")
 
     with left:
         st.markdown('<div class="section-title">✅ 지금 볼 할 일</div>', unsafe_allow_html=True)
 
-        view_filter = st.radio(
+        view = st.radio(
             "보기",
             ["오늘 중심", "기한 지남", "다가오는 일", "전체 미완료"],
             horizontal=True,
             label_visibility="collapsed",
         )
 
-        if view_filter == "오늘 중심":
+        if incomplete.empty:
+            display_tasks = pd.DataFrame()
+        elif view == "오늘 중심":
             display_tasks = pd.concat([overdue, today_tasks]).drop_duplicates(subset=["id"]).head(12)
-        elif view_filter == "기한 지남":
+        elif view == "기한 지남":
             display_tasks = overdue.head(12)
-        elif view_filter == "다가오는 일":
-            display_tasks = upcoming.head(12)
+        elif view == "다가오는 일":
+            display_tasks = incomplete[incomplete["due_date"] > today_str()].head(12)
         else:
             display_tasks = incomplete.head(20)
 
         if display_tasks.empty:
-            st.info("표시할 할 일이 없습니다. 빠른 등록에서 하나 추가하세요.")
+            st.info("표시할 할 일이 없습니다.")
         else:
             for _, row in display_tasks.iterrows():
-                render_task_card(row, key_prefix=f"dash_{view_filter}")
+                render_task_card(row, "dash")
 
     with right:
-        now_date = date.today()
-        c_y, c_m = st.columns(2)
-        cal_year = int(c_y.number_input("연도", min_value=2000, max_value=2100, value=now_date.year))
-        cal_month = int(c_m.number_input("월", min_value=1, max_value=12, value=now_date.month))
-        st.markdown(month_calendar_html(cal_year, cal_month, tasks_all, schedules_all), unsafe_allow_html=True)
+        st.markdown('<div class="section-title">📅 달력</div>', unsafe_allow_html=True)
+        render_real_calendar(tasks, schedules)
 
-        selected_day = st.date_input("날짜별 상세 보기", value=date.today(), key="dashboard_selected_day")
-        selected_str = selected_day.isoformat()
+        selected_date = st.session_state.get("selected_date", today_str())
+        st.markdown(f"<div class='section-title'>📌 {selected_date} 상세</div>", unsafe_allow_html=True)
 
-        day_tasks = tasks_all[tasks_all["due_date"] == selected_str] if not tasks_all.empty else pd.DataFrame()
-        day_schedules = schedules_all[schedules_all["schedule_date"] == selected_str] if not schedules_all.empty else pd.DataFrame()
-
-        st.markdown(f'<div class="section-title">📌 {selected_str} 상세</div>', unsafe_allow_html=True)
+        selected_tasks = tasks[tasks["due_date"] == selected_date] if not tasks.empty else pd.DataFrame()
+        selected_schedules = schedules[schedules["schedule_date"] == selected_date] if not schedules.empty else pd.DataFrame()
 
         st.markdown("**할 일**")
-        if day_tasks.empty:
+        if selected_tasks.empty:
             st.caption("해당 날짜 할 일이 없습니다.")
         else:
-            for _, row in day_tasks.sort_values(["due_time"]).iterrows():
-                st.write(f"- `{row['due_time'] or '-'}` {status_badge(row['status'])} **{row['title']}**")
+            for _, row in selected_tasks.sort_values(["due_time"]).iterrows():
+                st.write(f"- `{row['due_time'] or '-'}` {status_label(row['status'])} **{row['title']}**")
 
         st.markdown("**일정**")
-        if day_schedules.empty:
+        if selected_schedules.empty:
             st.caption("해당 날짜 일정이 없습니다.")
         else:
-            for _, row in day_schedules.sort_values(["start_time"]).iterrows():
+            for _, row in selected_schedules.sort_values(["start_time"]).iterrows():
                 alarm_txt = "시작시간" if not row["alarm_minutes"] else f"{int(row['alarm_minutes'])}분 전"
                 st.write(f"- `{row['start_time'] or '-'}` **{row['title']}** · 알림 {alarm_txt}")
 
 
 # =========================
-# 할 일 페이지
+# 할 일
 # =========================
 elif menu == "할 일":
-    section_title("할 일 관리", "등록, 검색, 상태 변경, 반복, 시간 알림까지 관리합니다.")
+    page_title("할 일 관리", "할 일 등록, 상태 변경, 반복, 시간 알림까지 관리합니다.")
 
     with st.expander("➕ 새 할 일 등록", expanded=True):
         with st.form("task_form", clear_on_submit=True):
@@ -952,6 +970,7 @@ elif menu == "할 일":
             repeat_type = c5.selectbox("반복", ["없음", "매일", "매주", "매월", "매년"])
             tags = c6.text_input("태그", placeholder="예: 택배,정산,청소")
             submitted = st.form_submit_button("등록", use_container_width=True)
+
             if submitted and title.strip():
                 q(
                     """
@@ -966,17 +985,19 @@ elif menu == "할 일":
 
     st.divider()
 
-    tasks = df("SELECT * FROM tasks ORDER BY due_date ASC, due_time ASC, created_at DESC")
+    tasks = safe_tasks_df()
+
     if tasks.empty:
         st.info("등록된 할 일이 없습니다.")
     else:
-        c1, c2, c3, c4 = st.columns([1.5, 1, 1, 1])
+        c1, c2, c3, c4 = st.columns([1.6, 1, 1, 1])
         keyword = c1.text_input("검색", placeholder="제목, 내용, 태그")
         status_filter = c2.selectbox("상태", ["전체", "대기", "진행", "보류", "완료"])
         category_filter = c3.selectbox("분류", ["전체", "개인", "업무", "식혜명가", "결혼준비", "기타"])
         priority_filter = c4.selectbox("중요도", ["전체", "높음", "보통", "낮음"])
 
         filtered = tasks.copy()
+
         if keyword:
             filtered = filtered[
                 filtered["title"].str.contains(keyword, case=False, na=False)
@@ -991,15 +1012,16 @@ elif menu == "할 일":
             filtered = filtered[filtered["priority"] == priority_filter]
 
         st.caption(f"총 {len(filtered)}개")
+
         for _, row in filtered.iterrows():
-            render_task_card(row, key_prefix="task_page")
+            render_task_card(row, "task_page")
 
 
 # =========================
-# 일정 페이지
+# 일정
 # =========================
 elif menu == "일정":
-    section_title("일정 관리", "일정 등록, 알림 시간, 월별 보기, 날짜별 목록을 관리합니다.")
+    page_title("일정 관리", "시작 시간, 알림 시간, 장소를 포함해 일정을 관리합니다.")
 
     with st.expander("➕ 새 일정 등록", expanded=True):
         with st.form("schedule_form", clear_on_submit=True):
@@ -1014,6 +1036,7 @@ elif menu == "일정":
             location = c5.text_input("장소")
             alarm_minutes = c6.selectbox("알림", [0, 5, 10, 30, 60, 120, 1440], format_func=lambda x: "시작시간" if x == 0 else f"{x}분 전")
             submitted = st.form_submit_button("일정 등록", use_container_width=True)
+
             if submitted and title.strip():
                 q(
                     """
@@ -1028,47 +1051,70 @@ elif menu == "일정":
 
     st.divider()
 
-    schedules = df("SELECT * FROM schedules ORDER BY schedule_date ASC, start_time ASC")
-    tasks = df("SELECT * FROM tasks ORDER BY due_date ASC, due_time ASC")
-    if schedules.empty:
-        st.info("등록된 일정이 없습니다.")
-    else:
-        tab1, tab2 = st.tabs(["월간 달력", "목록"])
-        with tab1:
-            now_date = date.today()
-            c1, c2 = st.columns(2)
-            y = int(c1.number_input("연도", 2000, 2100, now_date.year, key="sch_y"))
-            m = int(c2.number_input("월", 1, 12, now_date.month, key="sch_m"))
-            st.markdown(month_calendar_html(y, m, tasks, schedules), unsafe_allow_html=True)
+    tasks = safe_tasks_df()
+    schedules = safe_schedules_df()
 
-        with tab2:
-            c1, c2 = st.columns([1.5, 1])
+    tab1, tab2 = st.tabs(["달력 보기", "목록 보기"])
+
+    with tab1:
+        render_real_calendar(tasks, schedules)
+
+        selected_date = st.session_state.get("selected_date", today_str())
+        selected_schedules = schedules[schedules["schedule_date"] == selected_date] if not schedules.empty else pd.DataFrame()
+
+        st.markdown(f"<div class='section-title'>📌 {selected_date} 일정</div>", unsafe_allow_html=True)
+
+        if selected_schedules.empty:
+            st.info("해당 날짜 일정이 없습니다.")
+        else:
+            for _, row in selected_schedules.sort_values(["start_time"]).iterrows():
+                alarm_txt = "시작시간" if not row["alarm_minutes"] else f"{int(row['alarm_minutes'])}분 전"
+                with st.expander(f"{row['start_time']} · {row['title']} · 알림 {alarm_txt}"):
+                    if row["location"]:
+                        st.write(f"장소: {row['location']}")
+                    if row["detail"]:
+                        st.write(row["detail"])
+                    c1, c2 = st.columns(2)
+                    if c1.button("🔔 다시 알림", key=f"sch_reset_cal_{row['id']}", use_container_width=True):
+                        q("UPDATE schedules SET notified_at=NULL WHERE id=?", (int(row["id"]),))
+                        st.rerun()
+                    if c2.button("삭제", key=f"sch_del_cal_{row['id']}", use_container_width=True):
+                        q("DELETE FROM schedules WHERE id=?", (int(row["id"]),))
+                        st.rerun()
+
+    with tab2:
+        if schedules.empty:
+            st.info("등록된 일정이 없습니다.")
+        else:
+            c1, c2 = st.columns([1.6, 1])
             keyword = c1.text_input("검색", placeholder="일정명, 내용, 장소")
             only_future = c2.checkbox("오늘 이후만 보기", value=True)
+
             filtered = schedules.copy()
+
             if keyword:
                 filtered = filtered[
                     filtered["title"].str.contains(keyword, case=False, na=False)
                     | filtered["detail"].str.contains(keyword, case=False, na=False)
                     | filtered["location"].str.contains(keyword, case=False, na=False)
                 ]
+
             if only_future:
                 filtered = filtered[filtered["schedule_date"] >= today_str()]
 
             for _, row in filtered.iterrows():
                 alarm_txt = "시작시간" if not row["alarm_minutes"] else f"{int(row['alarm_minutes'])}분 전"
                 with st.expander(f"{row['schedule_date']} {row['start_time']} · {row['title']} · 알림 {alarm_txt}"):
-                    st.write(f"분류: {row['category']}")
                     if row["location"]:
                         st.write(f"장소: {row['location']}")
                     if row["detail"]:
                         st.write(row["detail"])
                     c1, c2 = st.columns(2)
-                    if c1.button("🔔 다시 알림", key=f"sch_reset_{row['id']}", use_container_width=True):
-                        q("UPDATE schedules SET notified_at=NULL WHERE id=?", (row["id"],))
+                    if c1.button("🔔 다시 알림", key=f"sch_reset_list_{row['id']}", use_container_width=True):
+                        q("UPDATE schedules SET notified_at=NULL WHERE id=?", (int(row["id"]),))
                         st.rerun()
-                    if c2.button("삭제", key=f"sch_del_{row['id']}", use_container_width=True):
-                        q("DELETE FROM schedules WHERE id=?", (row["id"],))
+                    if c2.button("삭제", key=f"sch_del_list_{row['id']}", use_container_width=True):
+                        q("DELETE FROM schedules WHERE id=?", (int(row["id"]),))
                         st.rerun()
 
 
@@ -1076,7 +1122,7 @@ elif menu == "일정":
 # 메모장
 # =========================
 elif menu == "메모장":
-    section_title("메모장", "빠른 메모, 고정, 검색 기능을 제공합니다.")
+    page_title("메모장", "빠른 메모, 고정, 검색, 수정을 지원합니다.")
 
     with st.expander("➕ 새 메모", expanded=True):
         with st.form("memo_form", clear_on_submit=True):
@@ -1086,6 +1132,7 @@ elif menu == "메모장":
             tags = c1.text_input("태그", placeholder="예: 아이디어,구매,업무")
             pinned = c2.checkbox("상단 고정")
             submitted = st.form_submit_button("저장", use_container_width=True)
+
             if submitted and title.strip():
                 q(
                     """
@@ -1099,11 +1146,14 @@ elif menu == "메모장":
                 st.rerun()
 
     st.divider()
-    memos = df("SELECT * FROM memos ORDER BY pinned DESC, updated_at DESC")
+
+    memos = safe_memos_df()
+
     if memos.empty:
         st.info("등록된 메모가 없습니다.")
     else:
         keyword = st.text_input("검색", placeholder="제목, 내용, 태그")
+
         if keyword:
             memos = memos[
                 memos["title"].str.contains(keyword, case=False, na=False)
@@ -1115,7 +1165,7 @@ elif menu == "메모장":
             pin = "📌 " if row["pinned"] else ""
             with st.expander(f"{pin}{row['title']} · {row['updated_at']}"):
                 if row["tags"]:
-                    st.markdown(render_tags(row["tags"]), unsafe_allow_html=True)
+                    st.caption(f"태그: {row['tags']}")
                 st.write(row["content"] or "내용 없음")
 
                 with st.form(f"edit_memo_{row['id']}"):
@@ -1124,6 +1174,7 @@ elif menu == "메모장":
                     new_tags = st.text_input("태그 수정", value=row["tags"])
                     new_pinned = st.checkbox("상단 고정", value=bool(row["pinned"]))
                     save = st.form_submit_button("수정 저장", use_container_width=True)
+
                     if save and new_title.strip():
                         q(
                             """
@@ -1131,12 +1182,13 @@ elif menu == "메모장":
                             SET title=?, content=?, tags=?, pinned=?, updated_at=?
                             WHERE id=?
                             """,
-                            (new_title.strip(), new_content.strip(), new_tags.strip(), 1 if new_pinned else 0, now_str(), row["id"]),
+                            (new_title.strip(), new_content.strip(), new_tags.strip(), 1 if new_pinned else 0, now_str(), int(row["id"])),
                         )
+                        st.success("수정했습니다.")
                         st.rerun()
 
-                if st.button("삭제", key=f"memo_del_{row['id']}", use_container_width=True):
-                    q("DELETE FROM memos WHERE id=?", (row["id"],))
+                if st.button("삭제", key=f"memo_delete_{row['id']}", use_container_width=True):
+                    q("DELETE FROM memos WHERE id=?", (int(row["id"]),))
                     st.rerun()
 
 
@@ -1144,9 +1196,9 @@ elif menu == "메모장":
 # 백업/설정
 # =========================
 elif menu == "백업/설정":
-    section_title("백업/설정", "데이터 백업과 초기화를 관리합니다.")
+    page_title("백업/설정", "데이터 백업과 초기화를 관리합니다.")
 
-    st.info("알림은 앱 화면이 켜져 있을 때만 작동합니다. 소리가 안 나면 페이지를 한 번 클릭한 뒤 알림 테스트를 누르세요.")
+    st.info("알림은 앱 화면이 켜져 있을 때만 작동합니다. 소리가 안 나면 페이지를 한 번 클릭한 뒤 알림 테스트를 눌러보세요.")
 
     c1, c2 = st.columns(2)
     c1.download_button(
@@ -1165,17 +1217,20 @@ elif menu == "백업/설정":
     )
 
     st.divider()
-    st.subheader("데이터 현황")
+
     c1, c2, c3 = st.columns(3)
     c1.metric("할 일", int(df("SELECT COUNT(*) AS n FROM tasks")["n"][0]))
     c2.metric("일정", int(df("SELECT COUNT(*) AS n FROM schedules")["n"][0]))
     c3.metric("메모", int(df("SELECT COUNT(*) AS n FROM memos")["n"][0]))
 
     st.divider()
+
     st.subheader("초기화")
     st.warning("초기화 전 백업을 먼저 받으세요.")
+
     target = st.selectbox("초기화 대상", ["선택 안 함", "완료된 할 일만 삭제", "할 일 전체", "일정 전체", "메모 전체", "전체 데이터"])
     confirm = st.text_input("실행하려면 삭제 입력")
+
     if st.button("초기화 실행", type="primary", use_container_width=True):
         if confirm != "삭제":
             st.error("확인 문구가 맞지 않습니다.")
@@ -1195,8 +1250,10 @@ elif menu == "백업/설정":
             else:
                 st.error("초기화 대상을 선택하세요.")
                 st.stop()
+
             st.success("초기화했습니다.")
             st.rerun()
 
     st.divider()
+
     st.code("pip install streamlit pandas openpyxl\nstreamlit run daily_manager_app.py", language="bash")
